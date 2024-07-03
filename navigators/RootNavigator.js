@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import OnboardingScreen from "../screens/OnboardingScreen";
 import SplashScreen from "../screens/SplashScreen";
 import ProfileScreen from "./../screens/ProfileScreen";
+import HomeScreen from "./../screens/HomeScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -28,7 +29,10 @@ const RootNavigator = () => {
   return (
     <Stack.Navigator>
       {isOnboardingCompleted ? (
-        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <>
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
+        </>
       ) : (
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       )}

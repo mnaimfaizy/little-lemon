@@ -56,6 +56,8 @@ const ProfileScreen = ({ navigation }) => {
     await AsyncStorage.setItem("onBoardingCompleted", "false");
     await AsyncStorage.removeItem("firstName");
     await AsyncStorage.removeItem("email");
+
+    navigation.navigate("Home");
   };
 
   const saveChanges = async () => {
