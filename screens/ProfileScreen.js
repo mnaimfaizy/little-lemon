@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
+  Alert,
+  ScrollView,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import CheckBox from "expo-checkbox";
@@ -53,9 +55,7 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const logout = async () => {
-    await AsyncStorage.setItem("onBoardingCompleted", "false");
-    await AsyncStorage.removeItem("firstName");
-    await AsyncStorage.removeItem("email");
+    await AsyncStorage.clear();
 
     navigation.navigate("Home");
   };
@@ -63,12 +63,22 @@ const ProfileScreen = ({ navigation }) => {
   const saveChanges = async () => {
     if (validatePhoneNumber()) {
       // Proceed with saving changes
+      await AsyncStorage.setItem("firstName", firstName);
+      await AsyncStorage.setItem("email", email);
+      await AsyncStorage.setItem("phoneNumber", phoneNumber);
+      await AsyncStorage.setItem("imageUri", imageUri ?? "");
+
+      Alert.alert("Changes Saved", "Your changes have been saved.");
     }
   };
 
   const discardChanges = () => {
-    // Implement discard logic here
-    // For example, reset state to initial values or navigate away
+    setLastName("");
+    setPhoneNumber("");
+    setOrderStatuses(false);
+    setPasswordChanges(false);
+    setSpecialOffers(false);
+    setNewsletter(false);
   };
 
   useEffect(() => {
@@ -83,104 +93,120 @@ const ProfileScreen = ({ navigation }) => {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Personal Information</Text>
-      <View style={styles.row}>
-        <Image
-          source={{ uri: imageUri || "https://via.placeholder.com/150" }}
-          style={styles.image}
-        />
-        <View>
-          <TouchableOpacity onPress={pickImage} style={styles.button}>
-            <Text>Change Image</Text>
+    <ScrollView>
+      <View style={styles.container}>
+        <Text style={styles.title}>Personal Information</Text>
+        <View style={styles.row}>
+          <Image
+            source={{ uri: imageUri || "https://via.placeholder.com/150" }}
+            style={styles.image}
+          />
+          <View>
+            <TouchableOpacity
+              onPress={pickImage}
+              style={{
+                ...styles.button,
+                backgroundColor: "gray",
+              }}
+            >
+              <Text>Change Image</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={removeImage}
+              style={{ ...styles.button, backgroundColor: "#DDDDDD" }}
+            >
+              <Text>Remove Image</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.inputContainer}>
+          <Text>FirstName:</Text>
+          <TextInput
+            style={styles.input}
+            onChangeText={setFirstName}
+            value={firstName}
+            placeholder="Enter your first name"
+          />
+          <Text>LastName:</Text>
+          <TextInput
+            style={styles.input}
+            onChangeText={setLastName}
+            value={lastName}
+            placeholder="Enter your last name"
+          />
+          <Text>Email:</Text>
+          <TextInput
+            style={styles.input}
+            onChangeText={setEmail}
+            value={email}
+            placeholder="Enter your email"
+            keyboardType="email-address"
+          />
+          <Text>PhoneNumber:</Text>
+          <MaskedTextInput
+            mask="(999) 999-9999"
+            onChangeText={(text, rawText) => {
+              setPhoneNumber(text);
+            }}
+            value={phoneNumber}
+            keyboardType="numeric"
+            style={styles.textInput}
+            placeholder="(123) 456-7890"
+          />
+        </View>
+        <View style={styles.sectionContainer}>
+          <Text style={{ fontSize: 16 }}>Email Notifications:</Text>
+          <View style={styles.checkboxContainer}>
+            <CheckBox
+              value={orderStatuses}
+              onValueChange={setOrderStatuses}
+              style={styles.checkbox}
+            />
+            <Text style={styles.label}>Order statuses</Text>
+          </View>
+          <View style={styles.checkboxContainer}>
+            <CheckBox
+              value={passwordChanges}
+              onValueChange={setPasswordChanges}
+              style={styles.checkbox}
+            />
+            <Text style={styles.label}>Password changes</Text>
+          </View>
+          <View style={styles.checkboxContainer}>
+            <CheckBox
+              value={specialOffers}
+              onValueChange={setSpecialOffers}
+              style={styles.checkbox}
+            />
+            <Text style={styles.label}>Special Offers</Text>
+          </View>
+          <View style={styles.checkboxContainer}>
+            <CheckBox
+              value={newsletter}
+              onValueChange={setNewsletter}
+              style={styles.checkbox}
+            />
+            <Text style={styles.label}>Newsletter</Text>
+          </View>
+        </View>
+        <View style={{ width: "100%", marginTop: 20, marginBottom: 20 }}>
+          <TouchableOpacity onPress={logout} style={styles.logoutButton}>
+            <Text>Log Out</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={removeImage} style={styles.button}>
-            <Text>Remove Image</Text>
+        </View>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity onPress={saveChanges} style={styles.saveButton}>
+            <Text>Save Changes</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={discardChanges}
+            style={styles.discardButton}
+          >
+            <Text>Discard Changes</Text>
           </TouchableOpacity>
         </View>
       </View>
-      <View style={styles.inputContainer}>
-        <Text>FirstName:</Text>
-        <TextInput
-          style={styles.input}
-          onChangeText={setFirstName}
-          value={firstName}
-          placeholder="Enter your first name"
-        />
-        <Text>LastName:</Text>
-        <TextInput
-          style={styles.input}
-          onChangeText={setLastName}
-          value={lastName}
-          placeholder="Enter your last name"
-        />
-        <Text>Email:</Text>
-        <TextInput
-          style={styles.input}
-          onChangeText={setEmail}
-          value={email}
-          placeholder="Enter your email"
-          keyboardType="email-address"
-        />
-        <Text>PhoneNumber:</Text>
-        <MaskedTextInput
-          mask="(999) 999-9999"
-          onChangeText={(text, rawText) => {
-            setPhoneNumber(rawText);
-          }}
-          value={phoneNumber}
-          keyboardType="numeric"
-          style={styles.textInput}
-          placeholder="(123) 456-7890"
-        />
-      </View>
-      <View style={styles.sectionContainer}>
-        <Text>Email Notifications:</Text>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={orderStatuses}
-            onValueChange={setOrderStatuses}
-            style={styles.checkbox}
-          />
-          <Text style={styles.label}>Order statuses</Text>
-        </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={passwordChanges}
-            onValueChange={setPasswordChanges}
-            style={styles.checkbox}
-          />
-          <Text style={styles.label}>Password changes</Text>
-        </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={specialOffers}
-            onValueChange={setSpecialOffers}
-            style={styles.checkbox}
-          />
-          <Text style={styles.label}>Special Offers</Text>
-        </View>
-        <View style={styles.checkboxContainer}>
-          <CheckBox
-            value={newsletter}
-            onValueChange={setNewsletter}
-            style={styles.checkbox}
-          />
-          <Text style={styles.label}>Newsletter</Text>
-        </View>
-      </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity onPress={logout} style={styles.logoutButton}>
-          <Text>Log Out</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={saveChanges} style={styles.saveButton}>
-          <Text>Save Changes</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={discardChanges} style={styles.discardButton}>
-          <Text>Discard Changes</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -201,39 +227,42 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   image: {
-    width: 150,
-    height: 150,
+    width: 130,
+    height: 130,
     borderRadius: 75,
     marginRight: 20,
   },
   button: {
-    backgroundColor: "#DDDDDD",
     padding: 10,
     marginTop: 10,
+    borderRadius: 10,
   },
   inputContainer: {
     width: "100%",
   },
   input: {
-    height: 40,
+    height: 35,
     marginVertical: 10,
     borderWidth: 1,
-    padding: 10,
+    padding: 8,
+    borderRadius: 5,
     width: "100%",
   },
   textInput: {
-    height: 40,
+    height: 35,
     borderColor: "gray",
     borderWidth: 1,
     marginVertical: 10,
     paddingHorizontal: 10,
+    borderRadius: 5,
   },
   sectionContainer: {
     marginTop: 20,
+    width: "100%",
   },
   checkboxContainer: {
+    width: "100%",
     flexDirection: "row",
-    alignItems: "center",
     marginTop: 10,
   },
   checkbox: {
@@ -243,21 +272,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   buttonContainer: {
+    width: "100%",
     flexDirection: "row",
-    justifyContent: "space-around",
-    marginTop: 20,
+    justifyContent: "space-between",
+    marginTop: 10,
   },
   logoutButton: {
-    backgroundColor: "#FF6347", // Tomato color for logout
+    backgroundColor: "#FF6347",
     padding: 10,
+    borderRadius: 16,
+    alignItems: "center",
   },
   saveButton: {
-    backgroundColor: "#90EE90", // Light green for save
+    backgroundColor: "#90EE90",
     padding: 10,
+    borderRadius: 5,
   },
   discardButton: {
-    backgroundColor: "#FFD700", // Gold for discard
+    backgroundColor: "#FFD700",
     padding: 10,
+    borderRadius: 5,
   },
 });
 

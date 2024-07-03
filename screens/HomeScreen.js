@@ -9,84 +9,77 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
+  useWindowDimensions,
 } from "react-native";
-
-import * as SQLite from "expo-sqlite";
-
-const db = SQLite.openDatabase("little_lemon.db");
+import { useDatabase } from "../hooks/useDatabase";
 
 const HomeScreen = ({ navigation }) => {
   const [menuItems, setMenuItems] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [searchText, setSearchText] = useState("");
+
+  const windowHeight = useWindowDimensions().height;
+
+  const {
+    initializeDatabase,
+    filterMenuItemsByCategoriesAndName,
+    storeDataInDb,
+  } = useDatabase(setMenuItems);
+
+  const debounce = (func, wait) => {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  };
+
+  const debouncedSearch = debounce((searchText) => {
+    filterMenuItemsByCategoriesAndName(
+      selectedCategories,
+      searchText,
+      (filteredItems) => {
+        setMenuItems(filteredItems);
+      }
+    );
+  }, 500);
+
+  const handleCategoryPress = (value) => {
+    const updatedCategories = selectedCategories.includes(value)
+      ? selectedCategories.filter((category) => category !== value)
+      : [...selectedCategories, value];
+    setSelectedCategories(updatedCategories);
+  };
 
   useEffect(() => {
     initializeDatabase();
   }, []);
 
-  const initializeDatabase = () => {
-    db.transaction((tx) => {
-      tx.executeSql(
-        "create table if not exists menu (id integer primary key not null, name text, description text, price text, imageUrl text);",
-        [],
-        () => {
-          loadData();
-        },
-        (t, error) => {
-          console.log("Error creating table", error);
+  useEffect(() => {
+    debouncedSearch(searchText);
+  }, [searchText, selectedCategories]);
+
+  useEffect(() => {
+    if (selectedCategories.length > 0) {
+      filterMenuItemsByCategoriesAndName(
+        selectedCategories,
+        "",
+        (filteredItems) => {
+          setMenuItems(filteredItems);
         }
       );
-    });
-  };
-
-  const loadData = () => {
-    db.transaction((tx) => {
-      tx.executeSql(
-        "select * from menu;",
-        [],
-        (_, { rows: { _array } }) => {
-          if (_array.length === 0) {
-            fetchMenuData();
-          } else {
-            setMenuItems(_array);
-          }
-        },
-        (t, error) => {
-          console.log("Error fetching from database", error);
-        }
-      );
-    });
-  };
-
-  const fetchMenuData = async () => {
-    try {
-      const response = await fetch(
-        "https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/capstone.json"
-      );
-      const data = await response.json();
-      const updatedMenuItems = data.menu.map((item) => ({
-        ...item,
-        imageUrl: `https://github.com/Meta-Mobile-Developer-PC/Working-With-Data-API/blob/main/images/${item.image}?raw=true`,
-      }));
-      setMenuItems(updatedMenuItems);
-      storeDataInDb(updatedMenuItems);
-    } catch (error) {
-      console.error("Error fetching menu data:", error);
+    } else {
+      // Optionally, fetch all menu items or handle the empty state
     }
-  };
-
-  const storeDataInDb = (menuItems) => {
-    db.transaction((tx) => {
-      menuItems.forEach((item) => {
-        tx.executeSql(
-          "insert into menu (name, description, price, imageUrl) values (?, ?, ?, ?);",
-          [item.name, item.description, item.price, item.imageUrl]
-        );
-      });
-    });
-  };
+  }, [selectedCategories]);
 
   return (
-    <View style={styles.container}>
-      <View style={{ flex: 0.75 }}>
+    <View style={(styles.container, [{ minHeight: Math.round(windowHeight) }])}>
+      <View style={{ flex: 0.6 }}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
@@ -124,9 +117,10 @@ const HomeScreen = ({ navigation }) => {
               style={styles.searchIcon}
             />
             <TextInput
-              placeholder="Search..."
+              placeholder="Search dishes..."
               placeholderTextColor="#FFF"
               style={styles.searchInput}
+              onChangeText={(text) => setSearchText(text)}
             />
           </View>
         </View>
@@ -138,23 +132,61 @@ const HomeScreen = ({ navigation }) => {
             showsHorizontalScrollIndicator={false}
             style={styles.buttonContainer}
           >
-            <TouchableOpacity style={styles.button}>
+            <TouchableOpacity
+              style={
+                selectedCategories.includes("starters")
+                  ? { ...styles.button, backgroundColor: "#F4CE14" }
+                  : { ...styles.button, backgroundColor: "#EDEFEE" }
+              }
+              onPress={() => handleCategoryPress("starters")}
+            >
               <Text style={styles.buttonText}>Starters</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button}>
+            <TouchableOpacity
+              style={
+                selectedCategories.includes("mains")
+                  ? { ...styles.button, backgroundColor: "#F4CE14" }
+                  : { ...styles.button, backgroundColor: "#EDEFEE" }
+              }
+              onPress={() => handleCategoryPress("mains")}
+            >
               <Text style={styles.buttonText}>Mains</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button}>
+            <TouchableOpacity
+              style={
+                selectedCategories.includes("desserts")
+                  ? { ...styles.button, backgroundColor: "#F4CE14" }
+                  : { ...styles.button, backgroundColor: "#EDEFEE" }
+              }
+              onPress={() => handleCategoryPress("desserts")}
+            >
               <Text style={styles.buttonText}>Desserts</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button}>
+            <TouchableOpacity
+              style={
+                selectedCategories.includes("drinks")
+                  ? { ...styles.button, backgroundColor: "#F4CE14" }
+                  : { ...styles.button, backgroundColor: "#EDEFEE" }
+              }
+              onPress={() => handleCategoryPress("drinks")}
+            >
               <Text style={styles.buttonText}>Drinks</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={
+                selectedCategories.includes("specials")
+                  ? { ...styles.button, backgroundColor: "#F4CE14" }
+                  : { ...styles.button, backgroundColor: "#EDEFEE" }
+              }
+              onPress={() => handleCategoryPress("specials")}
+            >
+              <Text style={styles.buttonText}>Specials</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
       </View>
       {/* Menu Section */}
-      <View style={{ flex: 0.25 }}>
+      <View style={{ flex: 0.4 }}>
         <FlatList
           data={menuItems}
           keyExtractor={(item, index) => index.toString()}
@@ -210,36 +242,36 @@ const styles = StyleSheet.create({
   },
   mainTitle: {
     color: "#F4CE14",
-    fontSize: 45,
+    fontSize: 40,
     fontWeight: "bold",
     fontFamily: "MarkaziText",
   },
   subTitle: {
     color: "white",
-    fontSize: 35,
+    fontSize: 30,
     fontFamily: "Karla",
   },
   contentContainer: {
     fle: 1,
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 10,
+    marginBottom: 10,
   },
   descriptionText: {
     flex: 0.5,
     color: "white",
     fontSize: 16,
-    marginBottom: 10,
+    marginBottom: 5,
     marginRight: 15,
   },
   sectionImage: {
     flex: 0.5,
-    height: 180,
+    height: 170,
     resizeMode: "cover",
     borderRadius: 16,
     marginLeft: 15,
-    marginTop: -30,
+    marginTop: -50,
   },
   searchBar: {
     flexDirection: "row",
@@ -275,7 +307,6 @@ const styles = StyleSheet.create({
   },
   button: {
     marginRight: 10,
-    backgroundColor: "#EDEFEE",
     borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 15,

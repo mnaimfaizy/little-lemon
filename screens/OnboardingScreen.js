@@ -1,8 +1,9 @@
 import { View, Text, StyleSheet, TextInput, Pressable } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import Header from "../components/Header";
 import { validateEmail } from "../utils";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useGlobalState } from "./../context/globalStateContext";
 
 const styles = StyleSheet.create({
   container: {
@@ -46,7 +47,9 @@ const styles = StyleSheet.create({
   },
 });
 
-const OnboardingScreen = ({ navigation }) => {
+const OnboardingScreen = () => {
+  const { isOnboardingCompleted, setIsOnboardingCompleted } = useGlobalState();
+
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [isButtonEnabled, setIsButtonEnabled] = useState(false);
@@ -64,10 +67,9 @@ const OnboardingScreen = ({ navigation }) => {
 
   const completeOnboarding = async () => {
     await AsyncStorage.setItem("onboardingCompleted", "true");
-    await AsyncStorage.setItem("firstName", firstName);
-    await AsyncStorage.setItem("email", email);
-    // Navigate to the Profile screen
-    navigation.navigate("Profile");
+    await AsyncStorage.setItem("firstName", firstName.toString());
+    await AsyncStorage.setItem("email", email.toString());
+    setIsOnboardingCompleted(true);
   };
 
   return (
